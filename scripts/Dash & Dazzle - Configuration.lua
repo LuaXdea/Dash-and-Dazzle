@@ -1,4 +1,4 @@
--- | Dash & Dazzle - Configuration | [v1.0]
+-- | Dash & Dazzle - Configuration | [v1.1]
 
 local vars = {
     Intro = true,
@@ -7,6 +7,7 @@ local vars = {
     SmoothHealth = true,
     SmoothHealthSpeed = 0.2,
     DisablePause = false,
+    DisableCameraZoom = false,
 
     StrumCamera = 'camHUD',
     Strums = 'strumLineNotes',
@@ -22,7 +23,7 @@ local vars = {
     IconScaleBeatX = 0.8,
     IconScaleBeatY = 0.8,
 
-    ActivateBot = false,
+    ActivateBot = true,
     precision = 'Normal',
     customOffsetRange = {-100,80},
     missChance = 0,
@@ -71,6 +72,15 @@ function onCreate()
     for name,value in pairs(vars) do
         local haxeVal = toHaxe(value)
         runHaxeCode("game.variables.set('"..name.."',"..haxeVal..");")
+    end
+    local DashScripts = {
+        'Dash & Dazzle.lua',
+        'DisableOptions.lua',
+        'ScoreMini.lua',
+        'CamFlow.lua'
+    }
+    for _,scriptPath in ipairs(DashScripts) do
+        addLuaScript('scripts/Dash & Dazzle/'..scriptPath)
     end
 end
 function toHaxe(val)
