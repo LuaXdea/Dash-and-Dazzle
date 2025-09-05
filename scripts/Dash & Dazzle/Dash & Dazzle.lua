@@ -1,5 +1,5 @@
 -- | Dash & Dazzle | By LuaXdea |
-local DashVersion = '0.7' -- Version de Dash & Dazzle
+local DashVersion = '0.8-Test-Alt' -- Version de Dash & Dazzle
 -- [YouTube]: https://youtube.com/@lua-x-dea?si=NRm2RlRsL8BLxAl5
 -- [Gamebanana]: Soon.....
 
@@ -11,32 +11,16 @@ local DashVersion = '0.7' -- Version de Dash & Dazzle
 -- | Configuración Interna |
 
 -- | General settings |
-local VersionAlert = true --[[ Te dira avisará si la versión,
+local VersionAlert = true
+--[[ Te dira avisará si la versión,
     de Psych Engine que estas usando no es compatible,
     con el Dash & Dazzle
     (0.7.2h • 0.7.3)
     [default: true]
-    ]]
+]]
 
 
--- | Disable settings |
-local DisableDownScroll = false -- Evita que el jugador active el DownScroll [default: false]
-local DisableMiddleScroll = false -- Evita que el jugador active el MiddleScroll [default: false]
-local DisableGhostTapping = false -- Evita que el jugador active el GhostTapping [default: false]
-local DisableHideHud = false -- Evita que el jugador active el HideHud [default: false]
-local DisableScoreZoom = false -- Evita que el jugador active el ScoreZoom [default: false]
-local DisableFlashingLights = false -- Evita que el jugador active el FlashingLights [default: false]
-local DisableLowQuality = false -- Evita que el jugador active el LowQuality [default: false]
-local DisableShadersEnabled = false -- Evita que el jugador active los shaders [default: false]
-local DisableCameraZoom = false --[[ Desactiva el zoom de la cámara,
-    incluyendo el evento "Add Camera Zoom" ya no funcionara correctamente
-    [default: false]
-    ]]
-local DisablePractice = false -- Evita que el jugador use practice [default: false]
-local DisableBotPlay = false -- Evita que el jugador use botplay [default: false]
-
-
--- | UI settings |
+-- | UI Hits |
 local ShowCombo = false -- Combo [default: false]
 local ShowComboNum = true -- Combo de números [default: true]
 local ShowRating = true -- Clasificaciones [default: true]
@@ -50,9 +34,11 @@ function Materials()
         makeLuaSprite('Background')
         makeGraphic('Background',screenWidth,screenHeight,'000000')
         setObjectCamera('Background','camOther')
+        setProperty('Background.alpha',0.4)
         addLuaSprite('Background',true)
 
-        makeLuaText('T1','English:\nThe Psych Engine version you are using is not compatible with "Dash & Dazzle v'..DashVersion..'"\n\nEspañol:\nLa versión de Psych Engine que estás usando no es compatible con "Dash & Dazzle v'..DashVersion..'"',screenWidth,0,screenHeight / 2.5)
+    local Message = 'English:\nThe Psych Engine version you are using is not compatible with "Dash & Dazzle v'..DashVersion..'"\n\nEspañol:\nLa versión de Psych Engine que estás usando no es compatible con "Dash & Dazzle v'..DashVersion..'"'
+        makeLuaText('T1',Message,screenWidth,0,screenHeight / 2.5)
         setTextSize('T1',23)
         setTextColor('T1','RED')
         setTextAlignment('T1','CENTER')
@@ -66,7 +52,8 @@ function getOptions()
     HealthBarColorFix = getProperty('HealthBarColorFix')
     SmoothHealth = getProperty('SmoothHealth')
     SmoothHealthSpeed = getProperty('SmoothHealthSpeed')
-    DisablePause = getProperty('DisablePause'),
+    DisablePause = getProperty('DisablePause')
+    DisableCameraZoom = getProperty('DisableCameraZoom')
 
     StrumCamera = getProperty('StrumCamera')
     Strums = getProperty('Strums')
@@ -94,28 +81,6 @@ function getOptions()
     HealthBarLow = getProperty('HealthBarLow')
 
     ScoreTxtMini = getProperty('ScoreTxtMini')
-    ScoreMiniTxt = getProperty('ScoreMiniTxt')
-    TimeScoreMini = getProperty('TimeScoreMini')
-    ColorScoreMini = getProperty('ColorScoreMini')
-
-    CamFlow = getProperty('CamFlow')
-    CustomCam = getProperty('CustomCam')
-
-    camX_opponent = getProperty('camX_opponent')
-    camY_opponent = getProperty('camY_opponent')
-    camX_player = getProperty('camX_player')
-    camY_player = getProperty('camY_player')
-    camX_gf = getProperty('camX_gf')
-    camY_gf = getProperty('camY_gf')
-
-    IndividualOffsets = getProperty('IndividualOffsets')
-    GeneralOffset = getProperty('GeneralOffset')
-
-    offset_opponent = getProperty('offset_opponent')
-    offset_player = getProperty('offset_player')
-    offset_gf = getProperty('offset_gf')
-
-    directionOffsets = getProperty('directionOffsets')
 end
 function UIsetting()
     local ScrollY = not ForceScroll and (downscroll and 0 or 575) or ScrollY
@@ -170,7 +135,7 @@ function onCountdownTick(counter)
                 if ScoreTxtMini and not getProperty('cpuControlled') then
                     doTweenAlpha('ScoreMiniAlpha','scoreTxt',1,0.5)
                 else
-                    setProperty('scoreTxt.visible',false)
+                    setProperty('.visible',false)
                 end
             end
         end
@@ -185,7 +150,6 @@ function onPause()
 end
 function onCreate()
     Materials() -- Materials
-    Options() -- Options
     ExtrasCreate() -- ExtrasCreate
 end
 function onCreatePost()
@@ -200,9 +164,7 @@ function onUpdate(elapsed)
     ExtrasUpdate() -- ExtrasUpdate (onUpdate)
 end
 function onUpdatePost(elapsed)
-    ScoreMiniPost(elapsed) -- ScoreMini [elapsed]
     healthBarFix() -- healthBarFix
-    onCamFlow() -- CamFlow
     ExtrasUpdatePost(elapsed) -- ExtrasUpdatePost (onUpdatePost) [elapsed]
 end
 function goodNoteHit(membersIndex,noteData,noteType,isSustainNote)
@@ -218,40 +180,6 @@ end
 function onEvent(eventName,value1,value2,strumTime)
     IconMakerRefresh(eventName,value1) -- IconMakerRefresh [eventName,value1]
     EventFlow(eventName,value1,value2) -- EventFlow [eventName,value1,value2]
-end
-
-
-
--- Options v1.1
-local defaultSettings = {}
-function Options()
-    local settingsList = {
-        'downScroll','middleScroll','ghostTapping','hideHud',
-        'scoreZoom','flashing','lowQuality','shaders'
-    }
-    for _,setting in pairs(settingsList) do
-        defaultSettings[setting] = getPropertyFromClass('backend.ClientPrefs','data.'..setting)
-    end
-    local settingsMap = {
-        {var = downscroll,key = 'downScroll',disable = DisableDownScroll},
-        {var = middlescroll,key = 'middleScroll',disable = DisableMiddleScroll},
-        {var = ghostTapping,key = 'ghostTapping',disable = DisableGhostTapping},
-        {var = hideHud,key = 'hideHud',disable = DisableHideHud},
-        {var = scoreZoom,key = 'scoreZoom',disable = DisableScoreZoom},
-        {var = flashingLights,key = 'flashing',disable = DisableFlashingLights},
-        {var = lowQuality,key = 'lowQuality',disable = DisableLowQuality},
-        {var = shadersEnabled,key = 'shaders',disable = DisableShadersEnabled}
-    }
-    for _,s in pairs(settingsMap) do
-    if s.var then
-            setPropertyFromClass('backend.ClientPrefs','data.'..s.key,not s.disable)
-        end
-    end
-end
-function onDestroy()
-    for setting,value in pairs(defaultSettings) do
-        setPropertyFromClass('backend.ClientPrefs','data.'..setting,value)
-    end
 end
 
 
@@ -405,7 +333,7 @@ end
 
 -- ExtrasCreate (onCreate)
 function ExtrasCreate()
-    setProperty('guitarHeroSustains',not HealthDrainOp)
+    -- setProperty('guitarHeroSustains',not HealthDrainOp)
     if getProperty('practiceMode') then
         setProperty('practiceMode',not DisablePractice)
     end
@@ -484,65 +412,6 @@ function ExtrasUpdatePost(elapsed)
             setPropertyFromGroup('grpNoteSplashes',i,'visible',false)
         end
     end
-end
-
-
--- ScoreMini v1
-local ScoreActual = getProperty('songScore')
-local timerUp,timerDown,incrementStageUp,incrementStageDown = 0,0,0,0
-local incrementSpeed = {up = 1,down = 1}
-function ScoreMiniPost(elapsed)
-    local TargetScore = getProperty('songScore')
-    timerUp = timerUp + elapsed
-    timerDown = timerDown + elapsed
-    if timerUp >= TimeScoreMini then
-        incrementStageUp = incrementStageUp + 1
-        incrementSpeed.up = 1 + (2 * incrementStageUp)
-        timerUp = 0
-    end
-    if timerDown >= TimeScoreMini then
-        incrementStageDown = incrementStageDown + 1
-        incrementSpeed.down = math.min(1 + incrementStageDown, 4)
-        timerDown = 0
-    end
-    if ScoreActual ~= TargetScore then
-        local direction = (ScoreActual < TargetScore) and 'up' or 'down'
-        ScoreActual = ScoreActual + ((direction == 'up') and incrementSpeed.up or -incrementSpeed.down)
-        setProperty('scoreTxt.color',getColorFromHex((direction == 'up') and ColorScoreMini or 'FF0000'))
-        if (direction == 'up' and ScoreActual > TargetScore) or (direction == 'down' and ScoreActual < TargetScore) then
-            ScoreActual = TargetScore
-        end
-        if ScoreActual == TargetScore then
-            doTweenColor('ScoreR','scoreTxt','FFFFFF',0.3)
-            incrementSpeed.up,incrementSpeed.down = 1,1
-            incrementStageUp,incrementStageDown = 0,0
-        end
-    end
-    if ScoreTxtMini and not getProperty('cpuControlled') then
-        local ScoreMiniTxt = ScoreMiniTxt == nil and '' or ScoreMiniTxt
-        setTextString('scoreTxt',ScoreMiniTxt..math.floor(ScoreActual))
-    end
-end
-
-
--- CamFlow v1.6.1 [Return]
--- Estoy tratando de hacer el CamFlow lo mas compacto posible
--- Eventos disponibles en la v2 Pronto...
-function onCamFlow()
-    local BaseX = gfSection and camX_gf or (mustHitSection and camX_player or camX_opponent)
-    local BaseY = gfSection and camY_gf or (mustHitSection and camY_player or camY_opponent)
-    if CustomCam then callMethod('camFollow.setPosition',{BaseX,BaseY}) end
-    local Offsets = IndividualOffsets and (gfSection and offset_gf or mustHitSection and offset_player or offset_opponent) or GeneralOffset
-    local offsetX,offsetY = 0,0
-    if CamFlow then
-        for i = 0,7 do
-            if getPropertyFromGroup('strumLineNotes',i,'animation.curAnim.name') == 'confirm' then
-                offsetX = offsetX + directionOffsets[i + 1][1] * Offsets
-                offsetY = offsetY + directionOffsets[i + 1][2] * Offsets
-            end
-        end
-    end
-    callMethod('camGame.targetOffset.set',{offsetX,offsetY})
 end
 
 
