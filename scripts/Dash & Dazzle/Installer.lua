@@ -1,0 +1,20 @@
+-- | Installer Beta |
+function onSongStart()
+    saveFile('custom_events/setTrigger.txt',[[
+ | setTrigger | by LuaXdea |
+
+Value1 -> "objeto,propiedad[,extra][,valor...]"
+Value2 -> "duración[,ease]" (Opcional)
+
+Ejemplos:
+V1: dad,alpha,0.5 -> Cambia transparencia a 0.5
+
+V1: dad,alpha,0.5
+V2: 1,backOut -> Hace tween en 1s con ease 
+
+V1: dad,scale,set,1.2,1.2 -> Cambia escala en X e Y
+
+Notas:
+- Soporta historial de cambios (máx 10).
+- Se puede usar "get,number" para recuperar valores previos.]])
+end
