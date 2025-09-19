@@ -1,5 +1,5 @@
 -- | Dash & Dazzle | By LuaXdea |
-local DashVersion = '0.8-Test-Alt' -- Version de Dash & Dazzle
+local DashVersion = '0.9-Test' -- Version de Dash & Dazzle
 -- [YouTube]: https://youtube.com/@lua-x-dea?si=NRm2RlRsL8BLxAl5
 -- [Gamebanana]: Soon.....
 
@@ -57,6 +57,10 @@ function getOptions()
 
     StrumCamera = getProperty('StrumCamera')
     Strums = getProperty('Strums')
+
+    ScoreTxtMini = getProperty('ScoreTxtMini')
+end
+function getOptionsUpdate()
     BotplayTxt = getProperty('BotplayTxt')
     ForceScroll = getProperty('ForceScroll')
     ScrollX = getProperty('ScrollX')
@@ -79,8 +83,6 @@ function getOptions()
     MinHealth = getProperty('MinHealth')
     LowHealthSpin = getProperty('LowHealthSpin')
     HealthBarLow = getProperty('HealthBarLow')
-
-    ScoreTxtMini = getProperty('ScoreTxtMini')
 end
 function UIsetting()
     local ScrollY = not ForceScroll and (downscroll and 0 or 575) or ScrollY
@@ -159,6 +161,7 @@ function onCreatePost()
     ExtrasCreatePost() -- ExtrasCreatePost (onCreatePost)
 end
 function onUpdate(elapsed)
+    getOptionsUpdate() -- getOptionsUpdate
     IconsAnimations() -- IconsAnimations
     SimpleHumanBot() -- Simple Human Bot
     ExtrasUpdate() -- ExtrasUpdate (onUpdate)
