@@ -1,5 +1,5 @@
--- | Dash & Dazzle • CamFlow v1.6.1 [Return] |
-function onCreatePost()
+-- | Dash & Dazzle • CamFlow v1.6.1[Fix] [Return] |
+function onUpdate()
     CamFlow = getProperty('CamFlow')
     CustomCam = getProperty('CustomCam')
 
