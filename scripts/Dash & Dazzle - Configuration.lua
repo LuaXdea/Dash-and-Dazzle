@@ -77,7 +77,8 @@ function onCreate()
         'Dash & Dazzle.lua',
         'DisableOptions.lua',
         'ScoreMini.lua',
-        'CamFlow.lua'
+        'CamFlow.lua',
+        'Events/setTrigger.lua'
     }
     for _,scriptPath in ipairs(DashScripts) do
         addLuaScript('scripts/Dash & Dazzle/'..scriptPath)
