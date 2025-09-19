@@ -1,4 +1,4 @@
--- | Dash & Dazzle - Configuration | [v1.1]
+-- | Dash & Dazzle - Configuration | [v1.1.1]
 
 local vars = {
     Intro = true,
@@ -74,6 +74,7 @@ function onCreate()
         runHaxeCode("game.variables.set('"..name.."',"..haxeVal..");")
     end
     local DashScripts = {
+        'Installer.lua',
         'Dash & Dazzle.lua',
         'DisableOptions.lua',
         'ScoreMini.lua',
