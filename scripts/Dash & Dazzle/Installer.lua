@@ -1,5 +1,6 @@
 -- | Installer Beta |
-function onSongStart()
+function onCreatePost()
+    if checkFileExists('custom_events/setTrigger.txt') then return end
     saveFile('custom_events/setTrigger.txt',[[
  | setTrigger | by LuaXdea |
 
