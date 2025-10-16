@@ -1,5 +1,5 @@
 -- | Dash & Dazzle | By LuaXdea |
-local DashVersion = '0.9-Test' -- Version de Dash & Dazzle
+local DashVersion = 'v1.0 - Beta' -- Version de Dash & Dazzle
 -- [YouTube]: https://youtube.com/@lua-x-dea?si=NRm2RlRsL8BLxAl5
 -- [Gamebanana]: Soon.....
 
@@ -26,10 +26,18 @@ local ShowComboNum = true -- Combo de números [default: true]
 local ShowRating = true -- Clasificaciones [default: true]
 
 
--- Extras
-local VersionCheck = version ~= '0.7.2h' and version ~= '0.7.3' -- Versiones para verificar
+-- No tocar
+local ScrollHUD = downscroll and 0 or 600
+local MaxBarScale = 0.5
+local OppScore = 0
+local DisplayOppScore = 0
+local DisplayPlayerScore = 0
+local OppLife = 1
+local BfLife = 1
+local GameOverStart = false
 
-function Materials()
+local VersionCheck = version ~= '0.7.2h' and version ~= '0.7.3' -- Versiones para verificar
+function onCreate()
     if VersionAlert and VersionCheck then
         makeLuaSprite('Background')
         makeGraphic('Background',screenWidth,screenHeight,'000000')
@@ -45,402 +53,216 @@ function Materials()
         setObjectCamera('T1','camOther')
         addLuaText('T1',true)
     end
-end
-function getOptions()
-    Intro = getProperty('Intro')
-    ColorBarVanilla = getProperty('ColorBarVanilla')
-    HealthBarColorFix = getProperty('HealthBarColorFix')
-    SmoothHealth = getProperty('SmoothHealth')
-    SmoothHealthSpeed = getProperty('SmoothHealthSpeed')
-    DisablePause = getProperty('DisablePause')
-    DisableCameraZoom = getProperty('DisableCameraZoom')
+    makeLuaSprite('OpponentBar',nil,100,50 + ScrollHUD)
+    makeGraphic('OpponentBar',300,15)
+    setObjectCamera('OpponentBar','camHUD')
+    addLuaSprite('OpponentBar',true)
+    setProperty('OpponentBar.origin.x',0)
+    setProperty('OpponentBar.scale.x',MaxBarScale)
 
-    StrumCamera = getProperty('StrumCamera')
-    Strums = getProperty('Strums')
+    makeLuaSprite('BfBar',nil,880,50 + ScrollHUD)
+    makeGraphic('BfBar',300,15)
+    setObjectCamera('BfBar','camHUD')
+    addLuaSprite('BfBar',true)
+    setProperty('BfBar.origin.x',getProperty('BfBar.width'))
+    setProperty('BfBar.scale.x',MaxBarScale)
 
-    ScoreTxtMini = getProperty('ScoreTxtMini')
-end
-function getOptionsUpdate()
-    BotplayTxt = getProperty('BotplayTxt')
-    ForceScroll = getProperty('ForceScroll')
-    ScrollX = getProperty('ScrollX')
-    ScrollY = getProperty('ScrollY')
-    IconScaleX = getProperty('IconScaleY')
-    IconScaleY = getProperty('IconScaleY')
-    IconsArrows = getProperty('IconsArrows')
-    IconMove = getProperty('IconMove')
-    IconsScaleBeatOn = getProperty('IconsScaleBeatOn')
-    IconScaleBeatX = getProperty('IconScaleBeatX')
-    IconScaleBeatY = getProperty('IconScaleBeatY')
-
-    ActivateBot = getProperty('ActivateBot')
-    precision = getProperty('precision')
-    customOffsetRange = getProperty('customOffsetRange')
-    missChance = getProperty('missChance')
-
-    HealthDrainOp = getProperty('HealthDrainOp')
-    Drain = getProperty('Drain')
-    MinHealth = getProperty('MinHealth')
-    LowHealthSpin = getProperty('LowHealthSpin')
-    HealthBarLow = getProperty('HealthBarLow')
-end
-function UIsetting()
-    local ScrollY = not ForceScroll and (downscroll and 0 or 575) or ScrollY
-    setProperty('healthBar.bg.visible',false)
-    callMethod('healthBar.setPosition',{-150 + ScrollX,15 + ScrollY})
-    callMethod('healthBar.scale.set',{Intro and 0.01 or 0.4,Intro and 0.01 or 1})
-    setProperty('healthBar.alpha',Intro and 0 or 1)
-
-    callMethod('iconBF.setPosition',{ScrollX + (Intro and 105 or 145),30 + ScrollY})
-    callMethod('iconBF.scale.set',{Intro and 0.01 or IconScaleX,Intro and 0.01 or IconScaleY})
-    setProperty('iconBF.alpha',Intro and 0 or 1)
-
-    callMethod('iconDad.setPosition',{ScrollX + (Intro and 50 or 20),30 + ScrollY})
-    callMethod('iconDad.scale.set',{Intro and 0.01 or IconScaleX,Intro and 0.01 or IconScaleY})
-    setProperty('iconDad.alpha',Intro and 0 or 1)
-
-    callMethod('scoreTxt.setPosition',{-489 + ScrollX,35 + ScrollY})
-    setProperty('scoreTxt.visible',ScoreTxtMini)
-    setProperty('scoreTxt.alpha',Intro and 0 or 1)
-
-    callMethod('timeBar.setPosition',{-50 + ScrollX,5 + ScrollY})
-    callMethod('timeBar.scale.set',{Intro and 0.01 or 0.4,Intro and 0.01 or 1})
-    setProperty('timeBar.bg.visible',false)
-    setProperty('timeBar.alpha',Intro and 0 or 1)
-
-    setProperty('timeTxt.visible',false)
-    setTextString('botplayTxt',BotplayTxt)
-end
-function onCountdownTick(counter)
-    if Intro then
-        for _,i in pairs({'iconBF','iconDad'}) do
-            if counter == 0 then
-                startTween('healthBarScaleSet','healthBar.scale',{x = 0.05,y = 1},0.5,{ease = 'backInOut'})
-                doTweenAlpha('healthBarAlpha','healthBar',1,0.5,'backInOut')
-                startTween('timeBarScaleSet','timeBar.scale',{x = 0.05,y = 1},0.5,{ease = 'backInOut'})
-                doTweenAlpha('timeBarAlpha','timeBar',1,0.5,'backInOut')
-            elseif counter == 1 then
-                doTweenX('healthBarScaleX','healthBar.scale',0.4,(bpm >= 180) and 1.5 or 2,'backInOut')
-                doTweenX('timeBarScaleX','timeBar.scale',0.4,(bpm >= 180) and 1.5 or 2,'backInOut')
-                doTweenAlpha(i..'Alpha',i,1,0.3,'backInOut')
-                startTween(i..'Scale',i..'.scale',{x = IconScaleX,y = IconScaleY},(bpm >= 180) and 0.3 or 0.5,{ease = 'backInOut'})
-            elseif counter == 2 then
-                iconBFXDefault = getProperty('iconBF.x') + 30
-                iconBFYDefault = getProperty('iconBF.y')
-                iconDadXDefault = getProperty('iconDad.x') - 30
-                iconDadYDefault = getProperty('iconDad.y')
-                doTweenX(i..'X',i,(i == 'iconDad') and getProperty('iconDad.x') - 30 or getProperty('iconBF.x') + 30,(bpm >= 180) and 1 or 1.5,'backInOut')
-                doTweenX(i..'ScaleX',i..'.scale',0.9,1)
-            elseif counter == 3 then
-                doTweenX(i..'ScaleX',i..'.scale',IconScaleX,0.5,'bounceOut')
-            elseif counter == 4 then
-                if ScoreTxtMini and not getProperty('cpuControlled') then
-                    doTweenAlpha('ScoreMiniAlpha','scoreTxt',1,0.5)
-                else
-                    setProperty('.visible',false)
-                end
-            end
-        end
-    end
-end
--- | Function list |
-function onBeatHit()
-    IconsScaleBeat() -- IconsScaleBeat
-end
-function onPause()
-    if DisablePause then return Function_Stop; end
-end
-function onCreate()
-    Materials() -- Materials
-    ExtrasCreate() -- ExtrasCreate
-end
-function onCreatePost()
-    getOptions() -- getOptions
-    UIMaker() -- UIMaker
-    UIsetting() -- UIsetting
-    ExtrasCreatePost() -- ExtrasCreatePost (onCreatePost)
-end
-function onUpdate(elapsed)
-    getOptionsUpdate() -- getOptionsUpdate
-    IconsAnimations() -- IconsAnimations
-    SimpleHumanBot() -- Simple Human Bot
-    ExtrasUpdate() -- ExtrasUpdate (onUpdate)
-end
-function onUpdatePost(elapsed)
-    healthBarFix() -- healthBarFix
-    ExtrasUpdatePost(elapsed) -- ExtrasUpdatePost (onUpdatePost) [elapsed]
-end
-function goodNoteHit(membersIndex,noteData,noteType,isSustainNote)
-    IconBFArrows(noteData) -- IconsArrows [noteData]
-end
-function opponentNoteHit(membersIndex,noteData,noteType,isSustainNote)
-    IconDadArrows(noteData) -- IconsArrows [noteData]
-    HealthDrain() -- HealthDrain
-end
-function onTimerCompleted(tag,loops,loopsLeft)
-    IconsReturn(tag) -- IconsReturn [tag]
-end
-function onEvent(eventName,value1,value2,strumTime)
-    IconMakerRefresh(eventName,value1) -- IconMakerRefresh [eventName,value1]
-    EventFlow(eventName,value1,value2) -- EventFlow [eventName,value1,value2]
-end
-
-
--- UIMaker
-function UIMaker()
-    runHaxeCode([[
-import objects.HealthIcon;
-
-    var iconBF = new HealthIcon(boyfriend.healthIcon,true);
-        game.variables.set('iconBF',iconBF);
-        game.add(iconBF);
-        game.uiGroup.add(iconBF);
-
-    var iconDad = new HealthIcon(dad.healthIcon,false);
-        game.variables.set('iconDad',iconDad);
-        game.add(iconDad);
-        game.uiGroup.add(iconDad);
-    ]])
-end
-
-
--- IconsAnimations
-function IconsAnimations()
-    for i = 1,2 do setProperty('iconP'..i..'.visible',false) end
-    setProperty('iconBF.animation.curAnim.curFrame',getProperty('healthBar.percent') < 20 and 1 or 0)
-    setProperty('iconDad.animation.curAnim.curFrame',getProperty('healthBar.percent') > 80 and 1 or 0)
-    if LowHealthSpin and curStep > 0 then
-        doTweenAngle('IconBFAngle','iconBF',getProperty('healthBar.percent') < 20 and iconBFAngleDefault + 360 or iconBFAngleDefault,0.3)
-        doTweenAngle('IconDadAngle','iconDad',getProperty('healthBar.percent') > 80 and iconDadAngleDefault + 360 or iconDadAngleDefault,0.3)
-    end
-end
-
-
--- IconMakerRefresh [eventName,value1]
-function IconMakerRefresh(n,v1)
-    if n == 'Change Character' then
-        local iconVar = (string.lower(v1) == 'dad' or string.lower(v1) == 'opponent') and 'iconDad' or not (string.lower(v1) == 'gf' or string.lower(v1) == 'girlfriend') and 'iconBF'
-        local charIcon = (iconVar == 'iconDad') and 'dad.healthIcon' or 'boyfriend.healthIcon'
-        runHaxeCode(('game.variables.get("%s").changeIcon(%s)'):format(iconVar,charIcon))
-    end
-end
-
-
--- IconsScaleBeat v1.1
-function IconsScaleBeat()
-    if IconsScaleBeatOn then
-        startTween('iconBFScale','iconBF.scale',{x = IconScaleBeatX,y = IconScaleBeatY},0.1,{ease = 'smootherStepOut',onComplete = 'ResetScale'})
-        startTween('iconDadScale','iconDad.scale',{x = IconScaleBeatX,y = IconScaleBeatY},0.1,{ease = 'smootherStepOut',onComplete = 'ResetScale'})
-    end
-end
-function ResetScale()
-    startTween('iconBFScale','iconBF.scale',{x = IconScaleX,y = IconScaleY},0.25,{ease = 'smootherStepOut'})
-    startTween('iconDadScale','iconDad.scale',{x = IconScaleX,y = IconScaleY},0.25,{ease = 'smootherStepOut'})
-end
-
-
--- IconsArrows [noteData]
-function IconBFArrows(noteData)
-    if IconsArrows then
-        local x,y = iconBFXDefault,iconBFYDefault
-        if noteData == 0 then x = x - IconMove
-        elseif noteData == 1 then y = y + IconMove
-        elseif noteData == 2 then y = y - IconMove
-        elseif noteData == 3 then x = x + IconMove end
-        doTweenX('iconBFX','iconBF',x,0.15)
-        doTweenY('iconBFY','iconBF',y,0.15)
-        runTimer('iconBFReturn',0.15)
-    end
-end
-function IconDadArrows(noteData)
-    if IconsArrows then
-        local x,y = iconDadXDefault,iconDadYDefault
-        if noteData == 0 then x = x - IconMove
-        elseif noteData == 1 then y = y + IconMove
-        elseif noteData == 2 then y = y - IconMove
-        elseif noteData == 3 then x = x + IconMove end
-        doTweenX('iconDadX','iconDad',x,0.15)
-        doTweenY('iconDadY','iconDad',y,0.15)
-        runTimer('iconDadReturn',0.15)
-    end
-end
-
-
--- IconsReturn [tag]
-function IconsReturn(t)
-    if t == 'iconBFReturn' or t == 'iconDadReturn' then
-        local char = t == 'iconBFReturn' and 'iconBF' or 'iconDad'
-        doTweenX(char..'XReturn',char,_G[char..'XDefault'],0.15)
-        doTweenY(char..'YReturn',char,_G[char..'YDefault'],0.15)
-    end
-end
-
-
--- saveFileLua [filePath,content,absolute]
-function saveFileLua(filePath,content,absolute)
-    local absolute = absolute or false
-    runHaxeCode([[
-        var path = "]]..filePath..[[";
-        if (!]]..tostring(absolute)..[[) path = Paths.mods(path);
-        if (!FileSystem.exists(path)) {
-            var dir = path.substr(0,path.lastIndexOf("/"));
-            if (!FileSystem.exists(dir)) FileSystem.createDirectory(dir);
-            File.saveContent(path,"]]..content..[[");
-        }
-    ]])
-end
-
-
--- HealthDrain
-function HealthDrain()
-    if HealthDrainOp and getHealth() >= MinHealth then
-        addHealth(-math.abs(Drain))
-    end
-end
-
-
--- Simple Human Bot v1.2
-function SimpleHumanBot()
-    runHaxeCode([[
-    var ActivateBot = ]]..tostring(ActivateBot)..[[;
-    var precision = "]]..precision..[[";
-    var customOffsetRange = []]..customOffsetRange[1]..[[,]]..customOffsetRange[2]..[[];
-    var missChance = ]]..missChance..[[;
-
-   if (!ActivateBot) return;
-        var songPos = Conductor.songPosition;
-        var randomOffset:Int;
-        for (note in game.notes) {
-            switch(precision) {
-                case 'Normal':
-                    randomOffset = FlxG.random.int(-100,100);
-                case 'Expert':
-                    randomOffset = FlxG.random.int(-50,50);
-                case 'Custom':
-                    randomOffset = FlxG.random.int(customOffsetRange[0],customOffsetRange[1]);
-                default:
-                    randomOffset = FlxG.random.int(-100,100);
-            }
-            if (note.canBeHit && note.strumTime <= songPos - randomOffset && !note.ignoreNote && FlxG.random.float(0,1) > missChance) {
-                game.goodNoteHit(note);
-            }
-        }
-        for (strum in game.playerStrums) {
-            if (strum.animation.curAnim.finished && strum.animation.curAnim.name != 'static') {
-                strum.playAnim('static');
-            }
-        }
-    ]])
-end
-
-
--- ExtrasCreate (onCreate)
-function ExtrasCreate()
-    -- setProperty('guitarHeroSustains',not HealthDrainOp)
-    if getProperty('practiceMode') then
-        setProperty('practiceMode',not DisablePractice)
-    end
-    if getProperty('cpuControlled') then
-        setProperty('cpuControlled',not DisableBotPlay)
+    local NamePath = dadName
+    for i = 1,4 do
+        makeLuaText('T'..i,(i == 1) and NamePath or 'Player',1280,i < 3 and ((i == 1) and -450 or 455) or (i == 3) and -450 or 450,(i < 3) and 30 + ScrollHUD or 65 + ScrollHUD)
+        setTextSize('T'..i,20)
+        setTextBorder('T'..i,0.8,'000000')
+        addLuaText('T'..i)
     end
     setProperty('showCombo',ShowCombo)
     setProperty('showComboNum',ShowComboNum)
     setProperty('showRating',ShowRating)
 end
+function getOptions()
+    DisablePause = getProperty('DisablePause')
 
--- ExtrasCreatePost (onCreatePost)
-function ExtrasCreatePost()
-    -- [Defaults]
-    iconBFXDefault = getProperty('iconBF.x')
-    iconBFYDefault = getProperty('iconBF.y')
-    iconDadXDefault = getProperty('iconDad.x')
-    iconDadYDefault = getProperty('iconDad.y')
+    IconsScaleBeatOn = getProperty('IconsScaleBeatOn')
+    LowHealthSpin = getProperty('LowHealthSpin')
+    IconWin = getProperty('IconWin')
+    IconBFScale = getProperty('IconBFScale') or 0.8
+    IconDadScale = getProperty('IconDadScale') or 0.8
+    ScaleBeat = getProperty('ScaleBeat') or 0.07
+
+    LifeGain = getProperty('LifeGain') or 0.02
+    LifeDrain = getProperty('LifeDrain') or 0.015
+    LifeDrainLow = getProperty('LifeDrainLow') or 0.01
+    LifeMiss = getProperty('LifeMiss') or 0.02
+end
+function getOptionsUpdate()
+    IconsScaleBeatOn = getProperty('IconsScaleBeatOn')
+    LowHealthSpin = getProperty('LowHealthSpin')
+    IconBFScale = getProperty('IconBFScale') or 0.8
+    IconDadScale = getProperty('IconDadScale') or 0.7
+    ScaleBeat = getProperty('ScaleBeat') or 0.07
+
+    LifeGain = getProperty('LifeGain') or 0.02
+    LifeDrain = getProperty('LifeDrain') or 0.015
+    LifeDrainLow = getProperty('LifeDrainLow') or 0.01
+    LifeMiss = getProperty('LifeMiss') or 0.02
+end
+function onCreatePost()
+    getOptions()
+    IconsWins()
+    setProperty('timeBar.visible',false)
+    setProperty('healthBar.visible',false)
+    setProperty('scoreTxt.visible',false)
     iconBFAngleDefault = getProperty('iconBF.angle')
     iconDadAngleDefault = getProperty('iconDad.angle')
-    runHaxeCode([[
-    var Camera = game.]]..StrumCamera..[[;
-    var strumGroup = game.]]..(Strums == nil and 'strumLineNotes' or Strums)..[[;
-
-        for (strum in strumGroup) { 
-            if (Camera == game.camGame) strum.scrollFactor.set(1,1);
-            strum.cameras = [Camera];
-        }
-        for (noteSplash in game.grpNoteSplashes) {
-            if (Camera == game.camGame) noteSplash.scrollFactor.set(1,1);
-            noteSplash.cameras = [Camera];
-        }
-        for (note in game.unspawnNotes) {
-            if (Camera == game.camGame) note.scrollFactor.set(1,1);
-            if (strumGroup == game.opponentStrums) {
-                if (!note.mustPress) note.cameras = [Camera];
-            } else if (strumGroup == game.playerStrums) {
-                if (note.mustPress) note.cameras = [Camera];
-            } else {
-                note.cameras = [Camera];
-            }
-        }
-    // | SmoothHealth • v1.1 |
-    if (]]..tostring(SmoothHealth)..[[) {
-        var HealthSmooth = 1;
-        healthBar.valueFunction = () -> return HealthSmooth = FlxMath.lerp(HealthSmooth,game.health,]]..(SmoothHealthSpeed or 0.5)..[[);
-    }
-    ]])
+end
+function onPause()
+    if DisablePause then return Function_Stop; end
 end
 
--- ExtrasUpdate (onUpdate)
-function ExtrasUpdate()
-    local hp,stepMod = getProperty('healthBar.percent'),curStep % 6
-    local bfAlpha = hp < 20 and (stepMod == 0 and 1 or 0.1) or 1
-    local dadAlpha = hp > 80 and (stepMod == 0 and 1 or 0.1) or 1
-    if HealthBarLow then
-        doTweenAlpha('healthBarBF','healthBar.rightBar',bfAlpha,hp < 20 and 0.15 or 0.5)
-        doTweenAlpha('healthBarDad','healthBar.leftBar',dadAlpha,0.15)
+-- | Icons |
+function getIconPath(char)
+    local basePath = IconWin and 'icons/iconsWin/' or 'icons/'
+    local name = basePath..char
+    if not checkFileExists('images/'..name..'.png') then
+        name = basePath..'icon-'..char
     end
-    if ColorBarVanilla then
-        HealthBarColorFix = false
-        setHealthBarColors('FF0000','00FF00')
+    if not checkFileExists('images/'..name..'.png') then
+        name = 'icons/icon-face'
     end
-    setProperty('camZooming',not DisableCameraZoom)
+    return name
+end
+function IconsWins()
+    if luaSpriteExists('iconBF') then removeLuaSprite('iconBF') end
+    if luaSpriteExists('iconDad') then removeLuaSprite('iconDad') end
+
+local pathIconBF = getIconPath(getProperty('boyfriend.healthIcon'))
+    makeLuaSprite('iconBFPre',pathIconBF)
+local BFframeW = getProperty('iconBFPre.width') / (IconWin and 3 or 2)
+local BFframeH = getProperty('iconBFPre.height')
+
+local pathIconDad = getIconPath(getProperty('dad.healthIcon'))
+    makeLuaSprite('iconDadPre',pathIconDad)
+local DadframeW = getProperty('iconDadPre.width') / (IconWin and 3 or 2)
+local DadframeH = getProperty('iconDadPre.height')
+
+    makeLuaSprite('iconBF',pathIconBF)
+    loadGraphic('iconBF',pathIconBF,BFframeW,BFframeH)
+    addAnimation('iconBF','idle',IconWin and {0,1,2} or {0,1},0,false)
+    setProperty('iconBF.flipX',true)
+    setObjectCamera('iconBF','camHUD')
+    setProperty('iconBF.x',1280 - 150 * getProperty('iconBF.scale.x') - 10)
+    setProperty('iconBF.y',-15 + ScrollHUD)
+    setProperty('iconBF.scale.x',IconDadScale)
+    setProperty('iconBF.scale.y',IconDadScale)
+    playAnim('iconBF','idle',true)
+    addLuaSprite('iconBF',true)
+
+    makeLuaSprite('iconDad',pathIconDad,10,-20 + ScrollHUD)
+    loadGraphic('iconDad',pathIconDad,DadframeW,DadframeH)
+    addAnimation('iconDad','idle',IconWin and {0,1,2} or {0,1},0,false)
+    setObjectCamera('iconDad','camHUD')
+    setProperty('iconDad.scale.x',IconDadScale)
+    setProperty('iconDad.scale.y',IconDadScale)
+    playAnim('iconDad','idle',true)
+    addLuaSprite('iconDad',true)
+
+    removeLuaSprite('iconBFPre')
+    removeLuaSprite('iconDadPre')
+end
+function onBeatHit()
+    if IconsScaleBeatOn then
+        startTween('iconBFScale','iconBF.scale',{x = IconBFScale + ScaleBeat,y = IconBFScale + ScaleBeat},0.1,{ease = 'smootherStepOut',onComplete = 'ResetScale'})
+        startTween('iconDadScale','iconDad.scale',{x = IconDadScale + ScaleBeat,y = IconDadScale + ScaleBeat},0.1,{ease = 'smootherStepOut',onComplete = 'ResetScale'})
+    end
+end
+function ResetScale()
+    startTween('iconBFScale','iconBF.scale',{x = IconBFScale,y = IconBFScale},0.25,{ease = 'smootherStepOut'})
+    startTween('iconDadScale','iconDad.scale',{x = IconDadScale,y = IconDadScale},0.25,{ease = 'smootherStepOut'})
+end
+function onEvent(n)
+    if n == 'Change Character' then IconsWins() end
 end
 
--- ExtrasUpdatePost (onUpdatePost) [elapsed]
-function ExtrasUpdatePost(elapsed)
-    if VersionAlert and VersionCheck then
-        setProperty('camGame.alpha',0.5)
-        setProperty('camHUD.alpha',0.5)
+-- | Health bars |
+function getEpsilon()
+    local minDrain = math.min(LifeDrain or 0.01,LifeDrainLow or 0.01,LifeMiss or 0.01)
+    return math.max(1e-4,minDrain * 0.5)
+end
+function clampLife(life)
+    local eps = getEpsilon()
+    if life <= eps then
+        return 0
+    elseif life >= 1 then
+        return 1
     end
-    -- Error de la 0.7.2h y 0.7.3 con el grpNoteSplashes
-    for i = 0,getProperty('grpNoteSplashes.length') - 1 do
-        if StrumCamera == 'camGame' and (version == '0.7.2h' or version == '0.7.3') then
-            setPropertyFromGroup('grpNoteSplashes',i,'visible',false)
+    return math.floor(life * 1000 + 0.5) / 1000
+end
+function opponentNoteHit(_,_,noteType)
+    if noteType ~= 'No Animation' then
+        OppScore = OppScore + math.random(150,350)
+        if OppLife < 1 then
+            OppLife = clampLife(OppLife + LifeGain)
+        else
+            BfLife = clampLife(BfLife - (BfLife > 0.3 and LifeDrain or LifeDrainLow))
         end
     end
 end
-
-
--- healthBarFix v1.2
-function healthBarFix()
-    if HealthBarColorFix then
-        bfRGB,dadRGB = getProperty('boyfriend.healthColorArray'),getProperty('dad.healthColorArray')
-        if areColorsSimilar(bfRGB[1],bfRGB[2],bfRGB[3],dadRGB[1],dadRGB[2],dadRGB[3]) then
-            local adjustedColor = adjustColor(dadRGB[1],dadRGB[2],dadRGB[3],calculateLuminosity(dadRGB[1],dadRGB[2],dadRGB[3]))
-            setHealthBarColors(rgbToHex(adjustedColor[1],adjustedColor[2],adjustedColor[3]),rgbToHex(bfRGB[1],bfRGB[2],bfRGB[3]))
-        end
+function goodNoteHit()
+    if BfLife < 1 then
+        BfLife = clampLife(BfLife + LifeGain)
+    else
+        OppLife = clampLife(OppLife - (OppLife > 0.3 and LifeDrain or LifeDrainLow))
+        OppScore = OppScore - math.random(150,450)
     end
 end
-function areColorsSimilar(r1,g1,b1,r2,g2,b2)
-    return math.abs(r1 - r2) <= 50 and math.abs(g1 - g2) <= 50 and math.abs(b1 - b2) <= 50
+function noteMiss()
+    BfLife = clampLife(BfLife - LifeMiss)
 end
-function calculateLuminosity(r,g,b)
-    return 0.299 * r + 0.587 * g + 0.114 * b
-end
-function adjustColor(r,g,b,lum)
-    local adj = (lum > 128) and -70 or 70
-    return { math.max(0,math.min(255,r + adj)),math.max(0,math.min(255,g + adj)),math.max(0,math.min(255,b + adj)) }
+function noteMissPress()
+    BfLife = clampLife(BfLife - LifeMiss)
 end
 
+function onUpdate()
+    for i = 1,2 do setProperty('iconP'..i..'.visible',false) end
+    setProperty('iconBF.animation.curAnim.curFrame',(IconWin and BfLife >= 0.8 and 2 or BfLife <= 0.3 and 1) or 0)
+    setProperty('iconDad.animation.curAnim.curFrame',(IconWin and OppLife >= 0.8 and 2 or OppLife <= 0.3 and 1) or 0)
+    if LowHealthSpin and curStep > 0 then
+        doTweenAngle('IconBFAngle','iconBF',(IconWin and BfLife >= 0.8 and iconBFAngleDefault - 360 or BfLife <= 0.3 and iconBFAngleDefault + 360) or iconBFAngleDefault,0.3)
+        doTweenAngle('IconDadAngle','iconDad',(IconWin and OppLife >= 0.8 and iconDadAngleDefault - 360 or OppLife <= 0.3 and iconDadAngleDefault + 360) or iconDadAngleDefault,0.3)
+    end
+    getOptionsUpdate()
+end
+function onUpdatePost(elapsed)
+    local BfColor = getProperty('boyfriend.healthColorArray')
+    local DadColor = getProperty('dad.healthColorArray')
 
--- ColorHex v2
+    local BfHex = rgbToHex(BfColor[1],BfColor[2],BfColor[3])
+    local DadHex = rgbToHex(DadColor[1],DadColor[2],DadColor[3])
+
+    doTweenX('BfBarTween','BfBar.scale',BfLife * MaxBarScale,0.2)
+    doTweenX('OppBarTween','OpponentBar.scale',OppLife * MaxBarScale,0.2)
+    setProperty('BfBar.color',getColorFromHex(BfHex))
+    setProperty('OpponentBar.color',getColorFromHex(DadHex))
+
+    local PlayerScore = getProperty('songScore')
+    DisplayOppScore = lerp(DisplayOppScore,OppScore,elapsed * 10)
+    DisplayPlayerScore = lerp(DisplayPlayerScore,PlayerScore,elapsed * 10)
+
+    setTextString('T3',math.floor(DisplayOppScore))
+    setTextString('T4',math.floor(DisplayPlayerScore))
+
+    if BfLife <= 0 then
+        setHealth(0)
+        GameOverStart = true
+    end
+end
+
+function onGameOver()
+    if not GameOverStart then
+        return Function_Stop;
+    end
+end
+
+-- ColorHex v2 Fix
 function rgbToHex(input,g,b)
     local r
     if type(input) == 'table' then
@@ -449,12 +271,17 @@ function rgbToHex(input,g,b)
         r = input
     end
     if type(r) ~= 'number' or type(g) ~= 'number' or type(b) ~= 'number' or
-       r < 0 or r > 255 or g < 0 or g > 255 or b < 0 or b > 255 then
+       r < 0 or r > 255 or g < 0 or g > 255 then
         return nil
     end
-    return string.format('0x%02X%02X%02X',r,g,b)
+    return string.format('%02X%02X%02X',r,g,b)
 end
 
+function lerp(a,b,t)
+    return a + (b - a) * math.min(1,t)
+end
 
-
--- Reporte cualquier error de forma detallada a LuaXdea
+function Warnings(Text,Color)
+    if not luaDebugMode then return end
+    debugPrint(Text,Color)
+end
