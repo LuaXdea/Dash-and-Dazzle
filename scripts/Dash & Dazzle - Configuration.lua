@@ -66,10 +66,10 @@ function onCreate()
         'Dash & Dazzle',
         'Simple Human Bot v1.2',
         'StrumCamera',
-        'DisableOptions.lua',
-        'CamFlow.lua',
-        'Installer.lua',
-        'Events/setTrigger.lua'
+        'DisableOptions',
+        'CamFlow',
+        'Installer',
+        'Events/setTrigger'
     }
     for _,scriptPath in ipairs(DashScripts) do
         addLuaScript('scripts/Dash & Dazzle/'..scriptPath)
