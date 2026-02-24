@@ -1,12 +1,8 @@
--- | Dash & Dazzle - Configuration | [v1.2]
+-- | Dash & Dazzle - Configuration | [v1.2.1]
 
 local vars = {
 -- | Extras |
     DisablePause = false,
-
--- | StrumCamera |
-    StrumCamera = 'camHUD',
-    Strums = 'strumLineNotes',
 
 -- | Icons |
     IconsScaleBeatOn = true,
@@ -19,7 +15,6 @@ local vars = {
 -- | HealthBar |
     LifeGain = 0.02,
     LifeDrain = 0.015,
-    LifeDrainLow = 0.01,
     LifeMiss = 0.02,
 
 -- | Simple Human Bot |
@@ -32,12 +27,12 @@ local vars = {
     CamFlow = true,
     CustomCam = false,
 
-    camX_opponent = 600,
-    camY_opponent = 600,
-    camX_player = 700,
-    camY_player = 600,
-    camX_gf = 650,
-    camY_gf = 450,
+    camX_opponent = 1550,
+    camY_opponent = 1600,
+    camX_player = 1550,
+    camY_player = 1600,
+    camX_gf = 1600,
+    camY_gf = 1600,
 
     IndividualOffsets = false,
     GeneralOffset = 25,
@@ -63,15 +58,15 @@ function onCreate()
         setVar(name,value)
     end
     local DashScripts = {
-        'Dash & Dazzle',
+        'HUD',
         'Simple Human Bot v1.2',
-        'StrumCamera',
+        'CamNotes',
         'DisableOptions',
         'CamFlow',
         'Installer',
         'Events/setTrigger'
     }
-    for _,scriptPath in ipairs(DashScripts) do
+    for _,scriptPath in pairs(DashScripts) do
         addLuaScript('scripts/Dash & Dazzle/'..scriptPath)
     end
 end
