@@ -1,5 +1,5 @@
--- | Dash & Dazzle | By LuaXdea |
-local DashVersion = 'v1.0 - Beta' -- Version de Dash & Dazzle
+-- | HUD | By LuaXdea |
+local DashVersion = '1.0' -- Version de Dash & Dazzle
 -- [YouTube]: https://youtube.com/@lua-x-dea?si=NRm2RlRsL8BLxAl5
 -- [Gamebanana]: Soon.....
 
@@ -90,7 +90,6 @@ function getOptions()
 
     LifeGain = getProperty('LifeGain') or 0.02
     LifeDrain = getProperty('LifeDrain') or 0.015
-    LifeDrainLow = getProperty('LifeDrainLow') or 0.01
     LifeMiss = getProperty('LifeMiss') or 0.02
 end
 function getOptionsUpdate()
@@ -102,12 +101,12 @@ function getOptionsUpdate()
 
     LifeGain = getProperty('LifeGain') or 0.02
     LifeDrain = getProperty('LifeDrain') or 0.015
-    LifeDrainLow = getProperty('LifeDrainLow') or 0.01
     LifeMiss = getProperty('LifeMiss') or 0.02
 end
 function onCreatePost()
     getOptions()
     IconsWins()
+    setVar('DYDGroup',{'OpponentBar','BfBar','T1','T2','T3','T4','iconBF','iconDad'})
     setProperty('timeBar.visible',false)
     setProperty('healthBar.visible',false)
     setProperty('scoreTxt.visible',false)
@@ -122,11 +121,15 @@ end
 function getIconPath(char)
     local basePath = IconWin and 'icons/iconsWin/' or 'icons/'
     local name = basePath..char
-    if not checkFileExists('images/'..name..'.png') then
+    local inModsOrAssets = checkFileExists('images/'..name..'.png')
+    local inSharedAbsolute = checkFileExists('assets/shared/images/'..name..'.png',true)
+    if not inModsOrAssets and not inSharedAbsolute then
         name = basePath..'icon-'..char
-    end
-    if not checkFileExists('images/'..name..'.png') then
-        name = 'icons/icon-face'
+        inModsOrAssets = checkFileExists('images/'..name..'.png')
+        inSharedAbsolute = checkFileExists('assets/shared/images/'..name..'.png',true)
+        if not inModsOrAssets and not inSharedAbsolute then
+            name = 'icons/icon-face'
+        end
     end
     return name
 end
@@ -170,13 +173,16 @@ local DadframeH = getProperty('iconDadPre.height')
 end
 function onBeatHit()
     if IconsScaleBeatOn then
-        startTween('iconBFScale','iconBF.scale',{x = IconBFScale + ScaleBeat,y = IconBFScale + ScaleBeat},0.1,{ease = 'smootherStepOut',onComplete = 'ResetScale'})
-        startTween('iconDadScale','iconDad.scale',{x = IconDadScale + ScaleBeat,y = IconDadScale + ScaleBeat},0.1,{ease = 'smootherStepOut',onComplete = 'ResetScale'})
+        IconsScale(IconBFScale,IconDadScale,ScaleBeat)
     end
 end
-function ResetScale()
-    startTween('iconBFScale','iconBF.scale',{x = IconBFScale,y = IconBFScale},0.25,{ease = 'smootherStepOut'})
-    startTween('iconDadScale','iconDad.scale',{x = IconDadScale,y = IconDadScale},0.25,{ease = 'smootherStepOut'})
+function IconsScale(BFScale,DADScale,scaleBeat)
+    startTween('iconBFScale','iconBF.scale',{x = BFScale + scaleBeat,y = BFScale + scaleBeat},0.1,{ease = 'smootherStepOut',onComplete = 'ResetScale'})
+    startTween('iconDadScale','iconDad.scale',{x = DADScale + scaleBeat,y = DADScale + scaleBeat},0.1,{ease = 'smootherStepOut',onComplete = 'ResetScale'})
+    function ResetScale()
+        startTween('iconBFScale','iconBF.scale',{x = BFScale,y = BFScale},0.25,{ease = 'smootherStepOut'})
+        startTween('iconDadScale','iconDad.scale',{x = DADScale,y = DADScale},0.25,{ease = 'smootherStepOut'})
+    end
 end
 function onEvent(n)
     if n == 'Change Character' then IconsWins() end
@@ -184,7 +190,7 @@ end
 
 -- | Health bars |
 function getEpsilon()
-    local minDrain = math.min(LifeDrain or 0.01,LifeDrainLow or 0.01,LifeMiss or 0.01)
+    local minDrain = math.min(LifeDrain or 0.01,LifeMiss or 0.01)
     return math.max(1e-4,minDrain * 0.5)
 end
 function clampLife(life)
@@ -202,7 +208,7 @@ function opponentNoteHit(_,_,noteType)
         if OppLife < 1 then
             OppLife = clampLife(OppLife + LifeGain)
         else
-            BfLife = clampLife(BfLife - (BfLife > 0.3 and LifeDrain or LifeDrainLow))
+            BfLife = clampLife(BfLife - (BfLife > 0.3 and LifeDrain or 0))
         end
     end
 end
@@ -210,8 +216,8 @@ function goodNoteHit()
     if BfLife < 1 then
         BfLife = clampLife(BfLife + LifeGain)
     else
-        OppLife = clampLife(OppLife - (OppLife > 0.3 and LifeDrain or LifeDrainLow))
-        OppScore = OppScore - math.random(150,450)
+        OppLife = clampLife(OppLife - (OppLife > 0.3 and LifeDrain or LifeDrain / 2))
+        OppScore = OppScore - math.random(100,350)
     end
 end
 function noteMiss()
@@ -262,7 +268,7 @@ function onGameOver()
     end
 end
 
--- ColorHex v2 Fix
+-- rgbToHex v2 Fix
 function rgbToHex(input,g,b)
     local r
     if type(input) == 'table' then
