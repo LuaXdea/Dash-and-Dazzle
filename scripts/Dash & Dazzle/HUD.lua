@@ -1,5 +1,5 @@
 -- | HUD | By LuaXdea |
-local DashVersion = '1.0' -- Version de Dash & Dazzle
+local DashVersion = '1.1' -- Version de Dash & Dazzle
 -- [YouTube]: https://youtube.com/@lua-x-dea?si=NRm2RlRsL8BLxAl5
 -- [Gamebanana]: Soon.....
 
@@ -67,7 +67,7 @@ function onCreate()
     setProperty('BfBar.origin.x',getProperty('BfBar.width'))
     setProperty('BfBar.scale.x',MaxBarScale)
 
-    local NamePath = dadName
+    local NamePath = 'Shiro'
     for i = 1,4 do
         makeLuaText('T'..i,(i == 1) and NamePath or 'Player',1280,i < 3 and ((i == 1) and -450 or 455) or (i == 3) and -450 or 450,(i < 3) and 30 + ScrollHUD or 65 + ScrollHUD)
         setTextSize('T'..i,20)
@@ -84,6 +84,7 @@ function getOptions()
     IconsScaleBeatOn = getProperty('IconsScaleBeatOn')
     LowHealthSpin = getProperty('LowHealthSpin')
     IconWin = getProperty('IconWin')
+    IconWinType = getProperty('IconWinType') or 3
     IconBFScale = getProperty('IconBFScale') or 0.8
     IconDadScale = getProperty('IconDadScale') or 0.8
     ScaleBeat = getProperty('ScaleBeat') or 0.07
@@ -118,8 +119,9 @@ function onPause()
 end
 
 -- | Icons |
-function getIconPath(char)
-    local basePath = IconWin and 'icons/iconsWin/' or 'icons/'
+-- | Funciones de ayuda |
+function getIconPath(char,win)
+    local basePath = win and 'icons/iconsWin/' or 'icons/'
     local name = basePath..char
     local inModsOrAssets = checkFileExists('images/'..name..'.png')
     local inSharedAbsolute = checkFileExists('assets/shared/images/'..name..'.png',true)
@@ -133,23 +135,32 @@ function getIconPath(char)
     end
     return name
 end
+function IconWinFor(v)
+    return IconWin and (IconWinType == v or IconWinType == 3)
+end
+function IconFrame(life,win)
+    return (win and life >= 0.8 and 2) or (life <= 0.3 and 1) or 0
+end
+function IconAngle(life,win,defaultAngle)
+    return (win and life >= 0.8 and defaultAngle - 360) or (life <= 0.3 and defaultAngle + 360) or defaultAngle
+end
+
 function IconsWins()
     if luaSpriteExists('iconBF') then removeLuaSprite('iconBF') end
     if luaSpriteExists('iconDad') then removeLuaSprite('iconDad') end
-
-local pathIconBF = getIconPath(getProperty('boyfriend.healthIcon'))
+    local pathIconBF = getIconPath(getProperty('boyfriend.healthIcon'),IconWinFor(1))
     makeLuaSprite('iconBFPre',pathIconBF)
-local BFframeW = getProperty('iconBFPre.width') / (IconWin and 3 or 2)
-local BFframeH = getProperty('iconBFPre.height')
+    local BFframeW = getProperty('iconBFPre.width') / (IconWinFor(1) and 3 or 2)
+    local BFframeH = getProperty('iconBFPre.height')
 
-local pathIconDad = getIconPath(getProperty('dad.healthIcon'))
+    local pathIconDad = getIconPath(getProperty('dad.healthIcon'),IconWinFor(2))
     makeLuaSprite('iconDadPre',pathIconDad)
-local DadframeW = getProperty('iconDadPre.width') / (IconWin and 3 or 2)
-local DadframeH = getProperty('iconDadPre.height')
+    local DadframeW = getProperty('iconDadPre.width') / (IconWinFor(2) and 3 or 2)
+    local DadframeH = getProperty('iconDadPre.height')
 
     makeLuaSprite('iconBF',pathIconBF)
     loadGraphic('iconBF',pathIconBF,BFframeW,BFframeH)
-    addAnimation('iconBF','idle',IconWin and {0,1,2} or {0,1},0,false)
+    addAnimation('iconBF','idle',IconWinFor(1) and {0,1,2} or {0,1},0,false)
     setProperty('iconBF.flipX',true)
     setObjectCamera('iconBF','camHUD')
     setProperty('iconBF.x',1280 - 150 * getProperty('iconBF.scale.x') - 10)
@@ -161,7 +172,7 @@ local DadframeH = getProperty('iconDadPre.height')
 
     makeLuaSprite('iconDad',pathIconDad,10,-20 + ScrollHUD)
     loadGraphic('iconDad',pathIconDad,DadframeW,DadframeH)
-    addAnimation('iconDad','idle',IconWin and {0,1,2} or {0,1},0,false)
+    addAnimation('iconDad','idle',IconWinFor(2) and {0,1,2} or {0,1},0,false)
     setObjectCamera('iconDad','camHUD')
     setProperty('iconDad.scale.x',IconDadScale)
     setProperty('iconDad.scale.y',IconDadScale)
@@ -186,6 +197,46 @@ function IconsScale(BFScale,DADScale,scaleBeat)
 end
 function onEvent(n)
     if n == 'Change Character' then IconsWins() end
+end
+function onUpdate()
+    for i = 1,2 do setProperty('iconP'..i..'.visible',false) end
+    setProperty('iconBF.animation.curAnim.curFrame',IconFrame(BfLife,IconWinFor(1)))
+    setProperty('iconDad.animation.curAnim.curFrame',IconFrame(OppLife,IconWinFor(2)))
+    if LowHealthSpin and curStep > 0 then
+        doTweenAngle('IconBFAngle','iconBF',IconAngle(BfLife,IconWinFor(1),iconBFAngleDefault),0.3)
+        doTweenAngle('IconDadAngle','iconDad',IconAngle(OppLife,IconWinFor(2),iconDadAngleDefault),0.3)
+    end
+    getOptionsUpdate()
+end
+function onUpdatePost(elapsed)
+    local BfColor = getProperty('boyfriend.healthColorArray')
+    local DadColor = getProperty('dad.healthColorArray')
+
+    local BfHex = rgbToHex(BfColor[1],BfColor[2],BfColor[3])
+    local DadHex = rgbToHex(DadColor[1],DadColor[2],DadColor[3])
+
+    doTweenX('BfBarTween','BfBar.scale',BfLife * MaxBarScale,0.2)
+    doTweenX('OppBarTween','OpponentBar.scale',OppLife * MaxBarScale,0.2)
+    setProperty('BfBar.color',getColorFromHex(BfHex))
+    setProperty('OpponentBar.color',getColorFromHex(DadHex))
+
+    local PlayerScore = getProperty('songScore')
+    DisplayOppScore = lerp(DisplayOppScore,OppScore,elapsed * 10)
+    DisplayPlayerScore = lerp(DisplayPlayerScore,PlayerScore,elapsed * 10)
+
+    setTextString('T3',math.floor(DisplayOppScore))
+    setTextString('T4',math.floor(DisplayPlayerScore))
+
+    if BfLife <= 0 then
+        setHealth(0)
+        GameOverStart = true
+    end
+end
+
+function onGameOver()
+    if not GameOverStart then
+        return Function_Stop;
+    end
 end
 
 -- | Health bars |
@@ -225,47 +276,6 @@ function noteMiss()
 end
 function noteMissPress()
     BfLife = clampLife(BfLife - LifeMiss)
-end
-
-function onUpdate()
-    for i = 1,2 do setProperty('iconP'..i..'.visible',false) end
-    setProperty('iconBF.animation.curAnim.curFrame',(IconWin and BfLife >= 0.8 and 2 or BfLife <= 0.3 and 1) or 0)
-    setProperty('iconDad.animation.curAnim.curFrame',(IconWin and OppLife >= 0.8 and 2 or OppLife <= 0.3 and 1) or 0)
-    if LowHealthSpin and curStep > 0 then
-        doTweenAngle('IconBFAngle','iconBF',(IconWin and BfLife >= 0.8 and iconBFAngleDefault - 360 or BfLife <= 0.3 and iconBFAngleDefault + 360) or iconBFAngleDefault,0.3)
-        doTweenAngle('IconDadAngle','iconDad',(IconWin and OppLife >= 0.8 and iconDadAngleDefault - 360 or OppLife <= 0.3 and iconDadAngleDefault + 360) or iconDadAngleDefault,0.3)
-    end
-    getOptionsUpdate()
-end
-function onUpdatePost(elapsed)
-    local BfColor = getProperty('boyfriend.healthColorArray')
-    local DadColor = getProperty('dad.healthColorArray')
-
-    local BfHex = rgbToHex(BfColor[1],BfColor[2],BfColor[3])
-    local DadHex = rgbToHex(DadColor[1],DadColor[2],DadColor[3])
-
-    doTweenX('BfBarTween','BfBar.scale',BfLife * MaxBarScale,0.2)
-    doTweenX('OppBarTween','OpponentBar.scale',OppLife * MaxBarScale,0.2)
-    setProperty('BfBar.color',getColorFromHex(BfHex))
-    setProperty('OpponentBar.color',getColorFromHex(DadHex))
-
-    local PlayerScore = getProperty('songScore')
-    DisplayOppScore = lerp(DisplayOppScore,OppScore,elapsed * 10)
-    DisplayPlayerScore = lerp(DisplayPlayerScore,PlayerScore,elapsed * 10)
-
-    setTextString('T3',math.floor(DisplayOppScore))
-    setTextString('T4',math.floor(DisplayPlayerScore))
-
-    if BfLife <= 0 then
-        setHealth(0)
-        GameOverStart = true
-    end
-end
-
-function onGameOver()
-    if not GameOverStart then
-        return Function_Stop;
-    end
 end
 
 -- rgbToHex v2 Fix
