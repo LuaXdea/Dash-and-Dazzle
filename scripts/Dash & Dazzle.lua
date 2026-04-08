@@ -1,4 +1,4 @@
--- | Dash & Dazzle - Configuration | [v1.2.1]
+-- | Dash & Dazzle - Configuration | [v1.2.2]
 
 local vars = {
 -- | Extras |
@@ -8,6 +8,7 @@ local vars = {
     IconsScaleBeatOn = true,
     LowHealthSpin = true,
     IconWin = false,
+    IconWinType = 3,
     IconBFScale = 0.8,
     IconDadScale = 0.8,
     ScaleBeat = 0.07,
@@ -27,12 +28,12 @@ local vars = {
     CamFlow = true,
     CustomCam = false,
 
-    camX_opponent = 1550,
-    camY_opponent = 1600,
-    camX_player = 1550,
-    camY_player = 1600,
-    camX_gf = 1600,
-    camY_gf = 1600,
+    camX_opponent = 0,
+    camY_opponent = 0,
+    camX_player = 0,
+    camY_player = 0,
+    camX_gf = 0,
+    camY_gf = 0,
 
     IndividualOffsets = false,
     GeneralOffset = 25,
@@ -62,9 +63,7 @@ function onCreate()
         'Simple Human Bot v1.2',
         'CamNotes',
         'DisableOptions',
-        'CamFlow',
-        'Installer',
-        'Events/setTrigger'
+        'CamFlow'
     }
     for _,scriptPath in pairs(DashScripts) do
         addLuaScript('scripts/Dash & Dazzle/'..scriptPath)
