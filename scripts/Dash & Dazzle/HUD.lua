@@ -67,7 +67,7 @@ function onCreate()
     setProperty('BfBar.origin.x',getProperty('BfBar.width'))
     setProperty('BfBar.scale.x',MaxBarScale)
 
-    local NamePath = 'Shiro'
+    local NamePath = dadName
     for i = 1,4 do
         makeLuaText('T'..i,(i == 1) and NamePath or 'Player',1280,i < 3 and ((i == 1) and -450 or 455) or (i == 3) and -450 or 450,(i < 3) and 30 + ScrollHUD or 65 + ScrollHUD)
         setTextSize('T'..i,20)
